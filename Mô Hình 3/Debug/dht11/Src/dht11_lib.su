@@ -1,0 +1,4 @@
+../dht11/Src/dht11_lib.c:5:6:microDelay	16	static
+../dht11/Src/dht11_lib.c:13:9:DHT11_Start	48	static
+../dht11/Src/dht11_lib.c:43:9:DHT11_Read	32	static
+../dht11/Src/dht11_lib.c:68:13:read_3_dht11	56	static

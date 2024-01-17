@@ -96,17 +96,17 @@ void readSensor(){
 		k+= HAL_ADC_GetValue(&hadc1);
 	}
 	adcValueCN2=k/3;
-	humid1=(float)adcValueCN2*100.0/4095;
+	humid1=100.0-(float)adcValueCN2*100.0/4095;
 	HAL_ADC_Stop(&hadc1);
-
+	sprintf(temp,"TEMP=%.1f",temp1);
+	sprintf(humid,"humid=%.1f",humid1);
 }
 
 void displayLCD(){
 	EventQueue_Put(&event, EVENT03);
 //	sprintf(temp,"TEMP=%.1f",(float)dht11.temperature);
 //	sprintf(humid,"humid=%.1f",(float)dht11.humidty);
-	sprintf(temp,"TEMP=%.1f",temp1);
-	sprintf(humid,"humid=%.1f",humid1);
+
 	lcd1602_i2c_clear();
 	lcd1602_i2c_1stLine();
 	lcd1602_i2c_printf(temp);
@@ -115,8 +115,7 @@ void displayLCD(){
 
 }
 void transmitData(){
-	sprintf(temp,"TEMP=%.1f",temp1);
-	sprintf(humid,"humid=%.1f",humid1);
+	
 //	sprintf(temp,"TEMP=%.1f",(float)dht11.temperature);
 //	sprintf(humid,"humid=%.1f",(float)dht11.humidty);
 	HAL_UART_Transmit(&huart1,(uint8_t*)temp, sizeof(temp), 1000);

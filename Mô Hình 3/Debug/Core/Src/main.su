@@ -1,0 +1,12 @@
+../Core/Src/main.c:56:5:main	24	static
+../Core/Src/main.c:103:6:SystemClock_Config	72	static
+../Core/Src/main.c:134:13:MX_I2C1_Init	8	static
+../Core/Src/main.c:158:13:MX_TIM1_Init	32	static
+../Core/Src/main.c:193:13:MX_USART1_UART_Init	8	static
+../Core/Src/main.c:220:13:MX_GPIO_Init	40	static
+../Core/Src/main.c:246:6:readSensor	8	static
+../Core/Src/main.c:255:6:displayLCD	8	static
+../Core/Src/main.c:262:6:transmitData	8	static
+../Core/Src/main.c:268:6:initEventQueue	4	static
+../Core/Src/main.c:274:6:HAL_UART_RxCpltCallback	24	static
+../Core/Src/main.c:293:6:Error_Handler	4	static,ignoring_inline_asm
