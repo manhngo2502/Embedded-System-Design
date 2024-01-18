@@ -118,6 +118,7 @@ uint8_t readDHT11(dht11_t *dht)
 			}
 
 		}
+		
 		mTime1 = (uint16_t)__HAL_TIM_GET_COUNTER(dht->htim);
 
 		//check pass time in high state

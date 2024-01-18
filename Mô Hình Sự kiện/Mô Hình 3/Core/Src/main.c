@@ -87,7 +87,8 @@ int main(void)
 
 		}
 			if(EventQueue_isEmpty(&event)){
-
+      HAL_UART_Transmit(&huart1, (uint8_t*)"Suspend", 7, 1000);
+		  HAL_UART_Transmit(&huart1,(uint8_t*)"\n", 2, 100);
 				HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
 				HAL_Delay(500);
 			}
@@ -244,6 +245,8 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 void readSensor(){
+    HAL_UART_Transmit(&huart1, (uint8_t*)"Task01", 6, 1000);
+	  HAL_UART_Transmit(&huart1,(uint8_t*)"\n", 2, 100);
 		EventQueue_Put(&event, EVENT02);
 		DHT_ReadTempHum(&dht);
 		//readDHT11(&dht11);
@@ -253,6 +256,8 @@ void readSensor(){
 }
 
 void displayLCD(){
+  HAL_UART_Transmit(&huart1, (uint8_t*)"Task02", 6, 1000);
+	HAL_UART_Transmit(&huart1,(uint8_t*)"\n", 2, 100);
 	EventQueue_Put(&event, EVENT03);
 	lcd1602_i2c_1stLine();
 	lcd1602_i2c_printf(temp);
@@ -260,6 +265,8 @@ void displayLCD(){
 	lcd1602_i2c_printf(humid);
 }
 void transmitData(){
+    HAL_UART_Transmit(&huart1, (uint8_t*)"Task03", 6, 1000);
+	  HAL_UART_Transmit(&huart1,(uint8_t*)"\n", 2, 100);
 		HAL_UART_Transmit(&huart1,(uint8_t*)temp,strlen(temp),1000);
 		HAL_UART_Transmit(&huart1,(uint8_t*)"\n",2,100);
 		HAL_UART_Transmit(&huart1,(uint8_t*)humid,strlen(humid),1000);

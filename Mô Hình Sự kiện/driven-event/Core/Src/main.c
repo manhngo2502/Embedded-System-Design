@@ -64,6 +64,8 @@ int main(void)
 //		  EventQueue_Put(&event, EVENT01);
 //	  }
 	  if(EventQueue_isEmpty(&event)){
+		  HAL_UART_Transmit(&huart1, (uint8_t*)"Suspend", 7, 1000);
+		  HAL_UART_Transmit(&huart1,(uint8_t*)"\n", 2, 100);
 		  HAL_SuspendTick();
 		  HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
 		  HAL_ResumeTick();
@@ -75,6 +77,8 @@ int main(void)
   }
 }
 void readSensor(){
+	HAL_UART_Transmit(&huart1, (uint8_t*)"Task01", 6, 1000);
+	HAL_UART_Transmit(&huart1,(uint8_t*)"\n", 2, 100);
 	EventQueue_Put(&event, EVENT02);
 	//readDHT11(&dht11);
 	ADC_Select_CH0();
@@ -96,7 +100,7 @@ void readSensor(){
 		k+= HAL_ADC_GetValue(&hadc1);
 	}
 	adcValueCN2=k/3;
-	humid1=100.0-(float)adcValueCN2*100.0/4095;
+	humid1=(float)adcValueCN2*100.0/4095;
 	HAL_ADC_Stop(&hadc1);
 	sprintf(temp,"TEMP=%.1f",temp1);
 	sprintf(humid,"humid=%.1f",humid1);
@@ -106,7 +110,8 @@ void displayLCD(){
 	EventQueue_Put(&event, EVENT03);
 //	sprintf(temp,"TEMP=%.1f",(float)dht11.temperature);
 //	sprintf(humid,"humid=%.1f",(float)dht11.humidty);
-
+	HAL_UART_Transmit(&huart1, (uint8_t*)"Task02", 6, 1000);
+	HAL_UART_Transmit(&huart1,(uint8_t*)"\n", 2, 100);
 	lcd1602_i2c_clear();
 	lcd1602_i2c_1stLine();
 	lcd1602_i2c_printf(temp);
@@ -115,9 +120,10 @@ void displayLCD(){
 
 }
 void transmitData(){
-	
 //	sprintf(temp,"TEMP=%.1f",(float)dht11.temperature);
 //	sprintf(humid,"humid=%.1f",(float)dht11.humidty);
+	HAL_UART_Transmit(&huart1, (uint8_t*)"Task03", 6, 1000);
+	HAL_UART_Transmit(&huart1,(uint8_t*)"\n", 2, 100);
 	HAL_UART_Transmit(&huart1,(uint8_t*)temp, sizeof(temp), 1000);
 	HAL_UART_Transmit(&huart1,(uint8_t*)"\n", 2, 100);
 	HAL_UART_Transmit(&huart1,(uint8_t*)humid, sizeof(humid), 1000);
@@ -308,9 +314,9 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 72-1;
+  htim2.Init.Prescaler = 3599;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 0xffff-1;
+  htim2.Init.Period = 9999;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
