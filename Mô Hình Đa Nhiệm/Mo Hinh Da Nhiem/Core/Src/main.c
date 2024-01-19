@@ -51,6 +51,9 @@ UART_HandleTypeDef huart1;
 
 osThreadId readTemperatureHandle;
 osThreadId readHumidityHandle;
+osThreadId CycleTaskHandle;
+osThreadId uart_TaskHandle;
+osSemaphoreId myCountingSem01Handle;
 /* USER CODE BEGIN PV */
 //Khai báo các biến
 int Temp, Humi, t=1;
@@ -68,6 +71,8 @@ static void MX_TIM1_Init(void);
 static void MX_USART1_UART_Init(void);
 void ReadTempTask(void const * argument);
 void ReadHumiTask(void const * argument);
+void CycleTask03(void const * argument);
+void Task_UART(void const * argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -82,6 +87,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)// Xử lý ngắt khi nh
 		   HAL_UART_Transmit(&huart1," Updating Cycle...\n",sizeof(" Updating cycle...\n"), 10);//Gửi lại tín hiệu xác nhận đã có ngắt
 		   HAL_UART_Receive_IT(&huart1,rxData, 2);// Kích hoạt lại ngắt nhận dữ liệu
 		   t= atoi(rxData);// Chuyển dữ liệu nhận được sang dạng số nguyên
+		   osSemaphoreRelease(myCountingSem01Handle);
 		 }
 	}
 /* USER CODE END 0 */
@@ -119,7 +125,7 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   lcd_init();
-  HAL_UART_Receive_IT(&huart1,rxData, 2);// G�?i ngắt nhận dữ liệu
+  HAL_UART_Receive_IT(&huart1,rxData, 2);// G�?i ngắt nhận dữ liệu
   HAL_TIM_Base_Start(&htim1);
   init_dht11(&dht,&htim1,GPIOA, GPIO_PIN_1);// Khởi tạo cho cảm biến DHT11
   lcd_send_cmd(0x40);
@@ -132,6 +138,11 @@ int main(void)
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
+
+  /* Create the semaphores(s) */
+  /* definition and creation of myCountingSem01 */
+  osSemaphoreDef(myCountingSem01);
+  myCountingSem01Handle = osSemaphoreCreate(osSemaphore(myCountingSem01), 4);
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
@@ -153,6 +164,14 @@ int main(void)
   /* definition and creation of readHumidity */
   osThreadDef(readHumidity, ReadHumiTask, osPriorityNormal, 0, 128);
   readHumidityHandle = osThreadCreate(osThread(readHumidity), NULL);
+
+  /* definition and creation of CycleTask */
+  osThreadDef(CycleTask, CycleTask03, osPriorityLow, 0, 128);
+  CycleTaskHandle = osThreadCreate(osThread(CycleTask), NULL);
+
+  /* definition and creation of uart_Task */
+  osThreadDef(uart_Task, Task_UART, osPriorityBelowNormal, 0, 128);
+  uart_TaskHandle = osThreadCreate(osThread(uart_Task), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -372,14 +391,11 @@ void display_Cycle()// Hiển thị chu kỳ lấy mẫu
 	lcd_send_string("s");
 }
 
-void readTemperature(void)// �?�?c và gửi dữ liệu nhiệt độ
+void readTemperature(void)// �?�?c và gửi dữ liệu nhiệt độ
 {
 	readDHT11(&dht);
 	Temp = dht.temperature;
 	itoa(Temp,str,10);
-	HAL_UART_Transmit(&huart1, "Temperature: ", sizeof("Temperature: "), 10);
-	HAL_UART_Transmit(&huart1, (uint8_t*) str, sizeof(str), 10);
-	HAL_UART_Transmit(&huart1, " C", sizeof(" C"), 10);
 	lcd_put_cur(0,0);
 	lcd_send_string("Temp: ");
 	lcd_put_cur(0, 6);
@@ -390,20 +406,30 @@ void readTemperature(void)// �?�?c và gửi dữ liệu nhiệt độ
 	lcd_send_string("C");
 }
 
-void readHumidity(void)// �?�?c và gửi dữ liệu độ ẩm
+void readHumidity(void)// �?�?c và gửi dữ liệu độ ẩm
 {
 	readDHT11(&dht);
 	Humi = dht.humidty;
 	itoa(Humi,stt,10);
-	HAL_UART_Transmit(&huart1, " Humidity: ", sizeof(" Humidity: "), 10);
-	HAL_UART_Transmit(&huart1, (uint8_t*) stt, sizeof(stt), 10);
-	HAL_UART_Transmit(&huart1, " %\n", sizeof(" %\n"), 10);
 	lcd_put_cur(1,0);
 	lcd_send_string("Humi: ");
 	lcd_put_cur(1, 6);
 	lcd_send_string(stt);
 	lcd_put_cur(1, 9);
 	lcd_send_string("%");
+}
+void update_Cycle(void)
+{
+	display_Cycle();
+}
+void UART_Transmit(void)
+{
+	HAL_UART_Transmit(&huart1, "Temperature: ", sizeof("Temperature: "), 10);
+	HAL_UART_Transmit(&huart1, (uint8_t*) str, sizeof(str), 10);
+	HAL_UART_Transmit(&huart1, " C", sizeof(" C"), 10);
+	HAL_UART_Transmit(&huart1, " Humidity: ", sizeof(" Humidity: "), 10);
+	HAL_UART_Transmit(&huart1, (uint8_t*) stt, sizeof(stt), 10);
+	HAL_UART_Transmit(&huart1, " %\n", sizeof(" %\n"), 10);
 }
 /* USER CODE END 4 */
 
@@ -420,8 +446,9 @@ void ReadTempTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-	  display_Cycle();
+	  //display_Cycle();
 	  readTemperature();
+	  osSemaphoreRelease(myCountingSem01Handle);
 	  osDelay(t*1000);
   }
   /* USER CODE END 5 */
@@ -441,9 +468,55 @@ void ReadHumiTask(void const * argument)
   for(;;)
   {
 	  readHumidity();
+	  osSemaphoreRelease(myCountingSem01Handle);
 	  osDelay(t*1000);
   }
   /* USER CODE END ReadHumiTask */
+}
+
+/* USER CODE BEGIN Header_CycleTask03 */
+/**
+* @brief Function implementing the CycleTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_CycleTask03 */
+void CycleTask03(void const * argument)
+{
+  /* USER CODE BEGIN CycleTask03 */
+  /* Infinite loop */
+  for(;;)
+  {
+	  osSemaphoreWait(myCountingSem01Handle, osWaitForever);
+	  osSemaphoreWait(myCountingSem01Handle, osWaitForever);
+	  osSemaphoreWait(myCountingSem01Handle, osWaitForever);
+	  osSemaphoreWait(myCountingSem01Handle, osWaitForever);
+	  update_Cycle();
+
+	 // HAL_UART_Transmit(&huart1, "task3\n", sizeof("task3\n"),10);
+    //osDelay(100);
+  }
+  /* USER CODE END CycleTask03 */
+}
+
+/* USER CODE BEGIN Header_Task_UART */
+/**
+* @brief Function implementing the uart_Task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Task_UART */
+void Task_UART(void const * argument)
+{
+  /* USER CODE BEGIN Task_UART */
+  /* Infinite loop */
+  for(;;)
+  {
+	  UART_Transmit();
+	  osSemaphoreRelease(myCountingSem01Handle);
+    osDelay(t*1000);
+  }
+  /* USER CODE END Task_UART */
 }
 
 /**

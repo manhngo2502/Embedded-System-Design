@@ -32,3 +32,4 @@ void init_dht11(dht11_t *dht, TIM_HandleTypeDef *htim, GPIO_TypeDef* port, uint1
 uint8_t readDHT11(dht11_t *dht);
 
 #endif /* MK_DHT11_H_ */
+
